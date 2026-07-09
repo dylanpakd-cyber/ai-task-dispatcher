@@ -1,0 +1,31 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # dispatch.py commits inside worktrees and the test suite seeds git
+      # repos; a bare runner has no git identity, so the green path needs one
+      - name: git identity
+        run: |
+          git config --global user.email "ci@ngnm"
+          git config --global user.name "ngnm ci"
+
+      - name: dispatcher self-tests
+        run: python3 -m unittest discover -s tests -v
+
+      - name: demo, green path
+        run: sh examples/run-demo.sh
+
+      - name: demo, red path (must bounce)
+        run: sh examples/run-demo-broken.sh
+
+      - name: gallery, every runnable spec
+        run: sh examples/run-gallery.sh

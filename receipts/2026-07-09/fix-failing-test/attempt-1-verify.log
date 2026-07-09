@@ -1,0 +1,8 @@
+test_double_digit_components (tests.test_versions.TestLatest.test_double_digit_components) ... ok
+test_simple (tests.test_versions.TestLatest.test_simple) ... ok
+test_single (tests.test_versions.TestLatest.test_single) ... ok
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.000s
+
+OK

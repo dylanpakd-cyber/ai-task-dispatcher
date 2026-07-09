@@ -41,8 +41,11 @@ def parse_spec(path: Path) -> dict:
             raise SpecError(f"spec needs a non-empty {required}: line. the verify line is the whole trick.")
     for k in LIST_KEYS:
         spec[k] = [p.strip() for p in re.split(r"[,\n]", spec.get(k, "")) if p.strip()]
-    spec["budget"] = float(spec.get("budget") or 15)
-    spec["retries"] = max(1, int(spec.get("retries") or 2))
+    try:
+        spec["budget"] = float(spec.get("budget") or 15)
+        spec["retries"] = max(1, int(spec.get("retries") or 2))
+    except ValueError:
+        raise SpecError("budget and retries must be numbers. still holding [brackets]?") from None
     spec["agent"] = (spec.get("agent") or ("mock" if spec.get("mock") else "codex")).lower()
     if spec["agent"] not in ("codex", "claude", "mock"):
         raise SpecError("agent must be codex, claude, or mock")
@@ -149,9 +152,23 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="one markdown spec in, a verified branch out")
     parser.add_argument("spec", help="path to the task spec markdown file")
     parser.add_argument("--repo", default=".", help="target git repo (default: cwd)")
+    parser.add_argument("--check", action="store_true",
+                        help="parse the spec, print what was understood, dispatch nothing")
     args = parser.parse_args()
 
-    spec = parse_spec(Path(args.spec).resolve())
+    try:
+        spec = parse_spec(Path(args.spec).resolve())
+    except SpecError as err:
+        sys.exit(f"spec error: {err}")
+    if args.check:
+        for key in KNOWN_KEYS:
+            value = spec.get(key)
+            if value not in (None, "", []):
+                print(f"{key}: {', '.join(value) if isinstance(value, list) else value}")
+        if re.search(r"\[[a-z][^\]]*\]", spec["raw"]):
+            print("note: this spec still has [brackets]; fill them before a real dispatch")
+        print("spec parses. drop --check to dispatch it.")
+        return
     repo = Path(git(Path(args.repo).resolve(), "rev-parse", "--show-toplevel"))
     slug = re.sub(r"[^a-z0-9-]+", "-", spec["path"].stem.lower()).strip("-") or "task"
     worktree, branch, run_id = make_worktree(repo, slug)
