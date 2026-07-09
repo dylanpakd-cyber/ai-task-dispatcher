@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.ngnm/
+.ngnm-logs/
+.DS_Store
