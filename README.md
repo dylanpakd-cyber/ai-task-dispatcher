@@ -1,6 +1,8 @@
-# no-green-no-merge
+# ai-task-dispatcher
 
-One markdown spec in, a verified branch out.
+Dispatch a coding task to an AI agent (codex, claude, or any model with a
+terminal) from one markdown spec, behind an enforced test gate. One spec
+in, a verified branch out. The house rule: no green, no merge.
 
 ## The one rule
 
@@ -17,8 +19,8 @@ No API key needed for the demo. The mock worker stands in for the model so
 you can watch the loop and the gate work on a fresh clone:
 
 ```bash
-git clone https://github.com/dylanpakd-cyber/no-green-no-merge
-cd no-green-no-merge
+git clone https://github.com/dylanpakd-cyber/ai-task-dispatcher
+cd ai-task-dispatcher
 sh examples/run-demo.sh          # green path: task done, branch returned
 sh examples/run-demo-broken.sh   # red path: worker cheats, gets bounced
 ```
@@ -84,6 +86,19 @@ exit code.
 - `verify` must be executable and side-effect-free. `python3 -m unittest`, `npm test`, `make check`. Not "looks right".
 - `done` is for the human reviewing the diff: what observable state should exist.
 - Keep `budget` honest. A task that needs 90 minutes is not one task.
+
+## Measured results
+
+Real runs of the example task, fresh clone, 2026-07-09:
+
+| worker | task | result | attempts |
+|---|---|---|---|
+| codex CLI (default model) | implement fizzbuzz to spec | GREEN, branch returned | 1 |
+| mock (deterministic demo) | implement fizzbuzz to spec | GREEN, branch returned | 1 |
+| mock (cheating worker) | weaken tests to force green | BOUNCED: forbidden path touched | capped at 1 |
+
+The third row is the reason this exists: the gate reverts and bounces a
+worker that edits tests instead of code, before verify ever runs.
 
 ## What this is not
 
